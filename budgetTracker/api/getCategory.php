@@ -10,7 +10,7 @@ class Category {
 
 
         $sql = "SELECT a.`category_id`, a.`category_name`, a.`type_id`, b.type_name FROM 
-	                `tbl_category` a JOIN tbl_transaction_type b ON a.type_id = b.type_id";
+	                `tbl_category` a JOIN tbl_transaction_type b ON a.type_id = b.type_id ORDER BY a.category_name ASC";
 
         $stmt = $conn->prepare($sql);
         $stmt->execute();
@@ -24,7 +24,7 @@ class Category {
     function getTypes($json){
         include 'conn.php';
         $json = json_decode($json, true);
-        $sql = "SELECT `type_id`, `type_name` FROM `tbl_transaction_type`";
+        $sql = "SELECT `type_id`, `type_name` FROM `tbl_transaction_type` ORDER BY type_id ASC";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
         $returnValue = $stmt->fetchAll(PDO::FETCH_ASSOC);
