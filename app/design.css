@@ -278,6 +278,10 @@ input::placeholder {
   gap: 10px;
 }
 
+.history__category-filter {
+  max-width: 200px;
+}
+
 .history__filter-chips {
   display: inline-flex;
   gap: 8px;

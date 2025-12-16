@@ -41,6 +41,7 @@ const MainPage = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [historyCategory, setHistoryCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 5;
   const [showEditModal, setShowEditModal] = useState(false);
@@ -310,13 +311,43 @@ const MainPage = () => {
     }
   };
 
-  const filteredTransactions = useMemo(() => {
-    if (filterType === "all") return transactions;
-    return transactions.filter((tx) => {
-      const typeName = (tx.type_name || tx.type || "").toLowerCase();
-      return filterType === typeName;
+  const categoryFilterOptions = useMemo(() => {
+    return categories.filter((cat) => {
+      if (filterType === "income") {
+        return cat.type_name === "Income" || cat.type_id === 1;
+      }
+      if (filterType === "expense") {
+        return cat.type_name === "Expense" || cat.type_id === 2;
+      }
+      return true;
     });
-  }, [transactions, filterType]);
+  }, [categories, filterType]);
+
+  const filteredTransactions = useMemo(() => {
+    let result = transactions;
+
+    if (filterType !== "all") {
+      result = result.filter((tx) => {
+        const typeName = (tx.type_name || tx.type || "").toLowerCase();
+        return filterType === typeName;
+      });
+    }
+
+    if (historyCategory !== "all") {
+      result = result.filter((tx) => {
+        const txCatId =
+          tx.category_id ?? tx.Category_id ?? tx.categoryId ?? null;
+        const txCatName = (tx.category_name || tx.category || "").toString();
+        const target = historyCategory.toString();
+        return (
+          (txCatId !== null && String(txCatId) === target) ||
+          txCatName === target
+        );
+      });
+    }
+
+    return result;
+  }, [transactions, filterType, historyCategory]);
 
   const expenseByCategory = useMemo(() => {
     const totals = {};
@@ -524,7 +555,12 @@ const MainPage = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterType, transactions]);
+  }, [filterType, historyCategory, transactions]);
+
+  useEffect(() => {
+    // Reset category filter when type filter changes so options stay valid
+    setHistoryCategory("all");
+  }, [filterType]);
 
   const totalPages = Math.max(
     1,
@@ -760,36 +796,48 @@ const MainPage = () => {
       </section>
 
       <section className="history card">
-        <div className="history__header">
-          <div>
-            <div className="history__title">Transaction History</div>
-            <div className="history__subtitle">
-              Recent income and expenses
-            </div>
-          </div>
-          <div className="history__controls">
-            <div className="history__filter-chips">
-              {["all", "income", "expense"].map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={`chip ${filterType === option ? "is-active" : ""}`}
-                  onClick={() => setFilterType(option)}
-                >
-                  {option === "all"
-                    ? "All"
-                    : option === "income"
-                      ? "Income"
-                      : "Expense"}
-                </button>
-              ))}
-            </div>
-            <div className="history__count">
-              {filteredTransactions.length}{" "}
-              {filteredTransactions.length === 1 ? "item" : "items"}
-            </div>
-          </div>
-        </div>
+         <div className="history__header">
+           <div>
+             <div className="history__title">Transaction History</div>
+             <div className="history__subtitle">
+               Recent income and expenses
+             </div>
+           </div>
+           <div className="history__controls">
+             <select
+               className="select-input history__category-filter"
+               value={historyCategory}
+               onChange={(e) => setHistoryCategory(e.target.value)}
+             >
+               <option value="all">All categories</option>
+              {categoryFilterOptions.map((cat) => (
+                 <option key={cat.category_id} value={cat.category_id}>
+                   {cat.category_name}
+                 </option>
+               ))}
+             </select>
+             <div className="history__filter-chips">
+               {["all", "income", "expense"].map((option) => (
+                 <button
+                   key={option}
+                   type="button"
+                   className={`chip ${filterType === option ? "is-active" : ""}`}
+                   onClick={() => setFilterType(option)}
+                 >
+                   {option === "all"
+                     ? "All"
+                     : option === "income"
+                       ? "Income"
+                       : "Expense"}
+                 </button>
+               ))}
+             </div>
+             <div className="history__count">
+               {filteredTransactions.length}{" "}
+               {filteredTransactions.length === 1 ? "item" : "items"}
+             </div>
+           </div>
+         </div>
 
         <div className="history__table-wrapper">
           <table className="history__table">
